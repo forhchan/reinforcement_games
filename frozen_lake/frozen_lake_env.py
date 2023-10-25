@@ -11,13 +11,10 @@ class Frozen:
               (0, 255, 255),
               (0, 0, 255),
               (255, 0, 0),
-              (0, 0, 0)]
+              (0, 0, 0),
+              (0, 255, 0)]
     
-    BLOCK_SIZE = 40
-    
-    
-    
-    metadata = {'render.modes': ['human']}
+    BLOCK_SIZE = 40    
     
     def __init__(self) -> None:
         super().__init__()
@@ -29,27 +26,23 @@ class Frozen:
         danger_pos = [char_pos-1, char_pos+1, char_pos+8, char_pos-8]
         for idx ,i in enumerate(danger_pos):
             y, x = divmod(i, 8)
-            if y >= 0 and y < 8 and x >= 0 and x < 8 and screen[y][x] != 3:
-                danger_pos[idx] = 0
-            else:
+            if 0 <= i <= 63 and screen[y][x] == int(0):
                 danger_pos[idx] = 1
+            else:
+                danger_pos[idx] = 0
                 
         return danger_pos
     
-    def one_hot(self, data, danger):
-        # des_y, des_x = divmod(self.destination_position)
-        # char_y, char_x = divmod(self.char_position)
-        # char_y > des_y
+    def one_hot(self, char_pos, danger):
         state = np.zeros(64)
-        dan = np.array(danger)
-        state[data] = 1
-        state = np.concatenate((state, dan), axis=0)
+        danger_pos = np.array(danger)
+        state[char_pos] = 1
+        state = np.concatenate((state, danger_pos), axis=0)
         state.resize(1, 68)
         state = torch.tensor(state, dtype=torch.float32)
         return state
                     
     def step(self, action):
-        
         # 0-Left, 1-Right, 3-Up, 2-Down, q-Break
         char_y, char_x = divmod(self.char_position, 8)
         self.char_position_prev = self.char_position
@@ -82,7 +75,12 @@ class Frozen:
             (char_y == 0 and action == 3) or (char_y == 7 and action == 2):
             self.done = True
             self.reward = -10
-        
+            
+            
+         
+        if self.char_position not in self.char_position_list:
+            self.char_position_list.append(self.char_position)
+            
         danger = self.check_danger(self.char_position, self.screen)
         
         state = self.one_hot(self.char_position, danger)
@@ -91,7 +89,11 @@ class Frozen:
     
     def render(self, ep, success_count, success_rate):
         
-        self.screen[divmod(self.char_position, 8)] = 1
+        for idx, char in enumerate(self.char_position_list[::-1]):
+            if idx == 0:
+                self.screen[divmod(char, 8)] = 5
+            else:
+                self.screen[divmod(char, 8)] = 1
         
         screen = [[self.COLORS[x] for x in row] for row in self.screen]
         screen = np.array(screen).reshape((8, 14, 3)).astype(np.uint8)
@@ -129,9 +131,12 @@ class Frozen:
         trap_positions = [(y*idx) + random.randint(0, 8) for idx, y in enumerate(range(8))]
         self.trap_positions = [x for x in trap_positions if x not in {self.char_position, self.destination_position}]
         # self.trap_positions = [2, 11, 12, 15, 19, 25, 28, 46, 58, 55, 61]
-        
+        self.char_position_list = [0]
+        # extra board
         self.screen[:, 8:] = 4
+        # destination on board
         self.screen[divmod(self.destination_position, 8)] = 2
+        # traps on board
         for trap in self.trap_positions:
             self.screen[divmod(trap, 8)] = 3
             
@@ -144,3 +149,4 @@ class Frozen:
         
         return state
     
+

@@ -32,12 +32,9 @@ class Agent:
         
     def get_action(self, state, success_rate):
         if np.random.rand(1) < (0.1 - (success_rate / 10)):
-            # action = np.random.choice(direction)
             action = random.randint(0, 3)
         else:
             output = self.model(state) 
-            # for i in no_directions:
-            #     output[0][i] = -10
             _, idx = torch.max(output, 1)
             a = idx.numpy()   
             action = a[0]
@@ -48,7 +45,6 @@ class Agent:
     def train(self, epoch):
         if epoch <= 0:
             raise ValueError('epoch must be positive integer')
-            
         # randon epsilon
         rand = 0.01
         rand_acc = -(rand / epoch)
