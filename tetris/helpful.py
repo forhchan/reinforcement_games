@@ -9,7 +9,7 @@ def plot(scores, mean_scores):
     plt.clf()
     plt.title('Training...')
     plt.xlabel('Number of Games')
-    plt.ylabel('Score')
+    plt.ylabel('Cleared Lines')
     plt.plot(scores, label="Cleared Lines")
     plt.plot(mean_scores, label="Mean Cleared Lines")
     plt.ylim(ymin=0)

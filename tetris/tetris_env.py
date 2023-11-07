@@ -44,7 +44,10 @@ class Tetris:
          [7, 7, 7]]
     ]
 
-    def __init__(self, width, height, extra_width):
+    def __init__(self, width, height, extra_width, render, video_record):
+        
+        self.video_record = video_record
+        self.rendering = render
         
         self.width = width
         self.height = height
@@ -55,10 +58,11 @@ class Tetris:
         self.best_cleared_lines = 0
         self.reset()      
         
-        ###################### Video Recording ############################### 
-        # fourcc = cv2.VideoWriter_fourcc(*'MP4V')  # You can choose different codecs (e.g., 'XVID', 'MP4V', 'MJPG')
-        # self.out = cv2.VideoWriter('tetris_game.mp4', fourcc, 30.0, ((self.width + 6) * 35, self.height * 35))
-        ######################################################################
+        if self.video_record:
+            # codecs ('XVID', 'MP4V', 'MJPG')
+            fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+            # (save path, fourcc, frame, (width, height))
+            self.out = cv2.VideoWriter('tetris_game.mp4', fourcc, 30.0, ((self.width + 6) * 35, self.height * 35))
         
     def reset(self) -> torch.FloatTensor:
         # random choice of blocks
@@ -72,7 +76,7 @@ class Tetris:
         
         self.block = [row[:] for row in self.blocks[self.block_idx]]  
         
-        self.gameover = False  # eq done
+        self.gameover = False  # == done
         self.score = 0
         self.cleared_lines = 0
         
@@ -118,18 +122,32 @@ class Tetris:
                 
         return False
     
-    def count_holes(self, board) -> int:
+    
+    def holes_bumpiness_heights(self, board):
+        # count number of holes that are under the blocks
+        # count total heights of the blocks
+        # count the differece of the block heights next to each other
         num_holes = 0
-        # from the top, check if there is any block vertically
-        for col in zip(*board): 
+        heights = []
+        
+        for col in zip(*board):
             row = 0
             while row < self.height and col[row] == 0:
                 row += 1
             
-            # if there is a block, check the num of holes from it.
-            num_holes += len([x for x in col[row+1:] if x == 0])
-        return num_holes
-    
+            heights.append(row)
+            num_holes += len([x for x in col[row+1:] if x==0])
+        
+        total_heights = (self.width * self.height) - sum(heights)
+        curr_heights = np.array(heights)[:-1]
+        next_heights = np.array(heights)[1:]
+        bumpiness = np.sum(np.abs(curr_heights-next_heights))
+        
+        # print(f"holes: {num_holes}, total_heights: {total_heights}, bumpiness: {bumpiness}")
+        
+        return num_holes, total_heights, bumpiness
+        
+  
     def check_cleared_rows(self, board) -> (int, list):
         to_del = []
         # check if there is a line that full with block from the bottom
@@ -142,28 +160,14 @@ class Tetris:
             board = self.clear_line(board, to_del)
         return len(to_del), board
     
-    def get_bumpiness_and_height(self, board) -> (int, int):
-        board = np.array(board)  # to numpy
-        mask = board != 0  # mask (if not 0) -> True
-        
-        # if True get np.argmax(mask. axis=0) else self.height
-        invert_heights = np.where(mask.any(axis=0), np.argmax(mask, axis=0), self.height)
-        heights = self.height - invert_heights # 15 - [1, 2, 3] - > [14, 13, 12]
-        
-        total_height = np.sum(heights)
-        currs = heights[:-1] # without last one
-        nexts = heights[1:] # without first one
-        diffs = np.abs(currs -nexts) # each diffes with next one
-        total_bumpiness = np.sum(diffs)
-        
-        return total_bumpiness, total_height
     
     def get_state(self, board) -> torch.FloatTensor:
         lines_cleared, board = self.check_cleared_rows(board)
-        holes = self.count_holes(board)
-        bumpiness, height = self.get_bumpiness_and_height(board)
+        # holes = self.count_holes(board)
+        # bumpiness, height = self.get_bumpiness_and_height(board)
+        holes, heights, bumpiness = self.holes_bumpiness_heights(board)
         
-        return torch.FloatTensor([lines_cleared, holes, bumpiness, height])
+        return torch.FloatTensor([lines_cleared, holes, bumpiness, heights])
     
     def get_next_state(self) -> dict[(int, int): torch.FloatTensor]:
         states = {}
@@ -246,10 +250,8 @@ class Tetris:
         cv2.putText(img, f'cleared_lines ',(10*self.block_size,12*self.block_size), font, 0.8,(0,0,0),2,cv2.LINE_AA)
         cv2.putText(img, f'{self.cleared_lines}',(11*self.block_size,13*self.block_size), font, 0.8,(0,255,0),2,cv2.LINE_AA)
         
-        
-        ###################### Video Recording  #############################
-        # self.out.write(img)
-        ######################################################################
+        if self.video_record:        
+            self.out.write(img)
         
         cv2.imshow('a', img)
     
@@ -262,28 +264,6 @@ class Tetris:
                 self.out.release()
                 cv2.destroyAllWindows()
                         
-        # if k == ord('a') and self.pos["x"] > 0:
-        #     self.pos["x"] -= 1
-        # elif k == ord('d') and self.pos["x"] < self.width - len(self.block[0]):
-        #     self.pos["x"] += 1
-            
-        # elif k == ord('s'):
-        #     if not self.check_collision(self.block):
-        #         self.pos["y"] += 1
-        #     else:
-        #         self.board = self.store(self.block)
-        #         self.reset()
-                
-        # elif k == ord('w'):
-        #     self.block = self.rotate(self.block)
-            
-        # elif k == ord('r'):
-        #     while self.pos["y"] < self.height - len(self.block) and not self.check_collision(self.block):
-        #         self.pos["y"] += 1
-        #     self.board = self.store(self.block)
-        #     _, self.board = self.check_cleared_rows(self.board)
-        #     self.game_over()
-        #     self.reset()
 
     def update_curr_board(self, board):
         if self.pos["y"] == 0:
@@ -307,7 +287,7 @@ class Tetris:
         if self.check_collision(self.block, self.pos):
             self.gameover = True
             
-    def step(self, action, render=False, n_games=None):
+    def step(self, action, n_games):
         x, num_rotations = action
         self.pos = {"x": x, "y": 0}
         # rotate the block in number of num_rotations
@@ -319,7 +299,7 @@ class Tetris:
             
         else:
             while not self.check_collision(self.block, self.pos):
-                if render:
+                if self.rendering:
                     self.render(n_games=n_games)
                 self.pos["y"] += 1
                 
@@ -339,4 +319,7 @@ class Tetris:
             score -= 10
 
         return score, self.gameover
-        
+
+
+
+
