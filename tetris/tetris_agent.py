@@ -133,9 +133,8 @@ class Agent:
                 ###################### Plot visualizing #############################
                 if self.plot_display:
                     cleared_lines.append(self.env.cleared_lines)
-                    total_cleared_lines += self.env.cleared_lines
-                    mean_lines = total_cleared_lines / self.n_games
-                    mean_cleared_lines.append(mean_lines)
+                    last_100_cleared_lines = sum(cleared_lines[-100:]) / 100
+                    mean_cleared_lines.append(last_100_cleared_lines)
                     plot(cleared_lines, mean_cleared_lines)
                 ######################################################################
                 

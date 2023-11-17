@@ -118,7 +118,7 @@ class SnakeEnv:
         
         return danger
 
-    def get_state(self, snake_head, move_direction):
+    def get_state(self, move_direction):
         move = [0, 0, 0, 0]
         move[move_direction] = 1
         move_left, move_up, move_right, move_down = move

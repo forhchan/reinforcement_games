@@ -9,6 +9,19 @@ class Model(nn.Module):
             nn.Linear(in_features=hidden_size, out_features=output_size)
         )
         
+        # self.fn = nn.Sequential(
+        #     # nn.Flatten(),
+        #     nn.Linear(in_features=input_size, out_features=hidden_size),
+        #     # nn.BatchNorm1d(hidden_size),
+        #     nn.ReLU(),
+        #     nn.Linear(in_features=hidden_size, out_features=128),
+        #     # nn.BatchNorm1d(24),
+        #     nn.ReLU(),
+        #     nn.Linear(in_features=128, out_features=output_size)
+        # )
+        
+        
+        
     def forward(self, x):
         x = self.fn(x)
         return x

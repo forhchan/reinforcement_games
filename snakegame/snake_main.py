@@ -25,10 +25,9 @@ def plot(scores, mean_scores):
     plt.plot(mean_scores, label="Mean Score")
     plt.ylim(ymin=0)
     plt.text(len(scores)-1, scores[-1], str(scores[-1]))
-    plt.text(len(mean_scores)-1, mean_scores[-1], str(mean_scores[-1]))
+    plt.text(len(mean_scores)-1, mean_scores[-1], str(f'{mean_scores[-1]:.3f}'))
     plt.show(block=False)
     plt.legend()
-    plt.pause(.1)
     
     
 def get_args():
@@ -135,7 +134,7 @@ class Agent:
         while True:
             # game.render(self.n_games, self.r)
             # Decide action
-            obs = game.get_state(game.snake_head, game.prev_direction)
+            obs = game.get_state(game.prev_direction)
             action = self.get_action(obs)
             self.model.train()
             
@@ -148,7 +147,7 @@ class Agent:
             # if game_stuck > 200:
             #     done = True
             
-            new_obs = game.get_state(game.snake_head, game.prev_direction)
+            new_obs = game.get_state(game.prev_direction)
             # train short memory
             
             self.train_short_memory(obs, new_obs, reward, action, done)
