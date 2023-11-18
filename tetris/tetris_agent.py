@@ -17,7 +17,7 @@ def get_args():
     parser.add_argument("--extra_width", type=int, default=6, help="board for scores..")
     parser.add_argument("--lr", type=float, default=1e-3, help="model learning rate")
     parser.add_argument("--MAX_LEN", type=int, default=30000, help="number of epochs")
-    parser.add_argument("--num_epochs", type=int, default=920, help="train epochs")
+    parser.add_argument("--num_epochs", type=int, default=1500, help="train epochs")
     parser.add_argument("--gamma", type=float, default=0.99, help="width of")
     parser.add_argument("--batch_size", type=int, default=3000, help="batch_size")
     # parser.add_argument("--rendering", type=bool, default=False, help="render the game")
@@ -36,6 +36,7 @@ class Trainer():
         self.gamma = gamma
         self.loss_fn = nn.MSELoss()
         self.opt = torch.optim.Adam(params=self.model.parameters(), lr=opt.lr)
+        self.loss = 0
         
     def train_step(self, state, reward, new_state, done):
         reward = torch.tensor(reward, dtype=torch.float)
@@ -46,7 +47,7 @@ class Trainer():
             reward = torch.unsqueeze(reward, dim=0)
             done = (done, )
         
-        pred = self.model(state)[0] # output is two dimension. get [0]
+        pred = self.model(state)[0] #　if output is two dimension. get [0]
         target = pred.clone()
         for idx in range(len(pred)):
             new_Q = reward[idx] # the case of game is done
@@ -55,6 +56,7 @@ class Trainer():
             target[idx] = new_Q
         
         loss = self.loss_fn(target, pred)
+        self.loss = loss.item()
         
         self.opt.zero_grad()
         loss.backward()
@@ -108,7 +110,8 @@ class Agent:
         state = self.env.reset().to(self.device) # the first state
         cleared_lines = []
         mean_cleared_lines = []
-        total_cleared_lines = 0
+        # losses = []
+        
         
         while self.n_games < num_epochs:
             next_steps = self.env.get_next_state()
@@ -135,6 +138,7 @@ class Agent:
                     cleared_lines.append(self.env.cleared_lines)
                     last_100_cleared_lines = sum(cleared_lines[-100:]) / 100
                     mean_cleared_lines.append(last_100_cleared_lines)
+                    # losses.append(self.trainer.loss / 100)
                     plot(cleared_lines, mean_cleared_lines)
                 ######################################################################
                 
