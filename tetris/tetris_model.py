@@ -8,9 +8,9 @@ class Tetris_Model(nn.Module):
         self.conv1 = nn.Sequential(
             nn.Linear(4, 64),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(64, 128),
             nn.ReLU(),
-            nn.Linear(64, 1)
+            nn.Linear(128, 1),
         )
         
     def forward(self, x):

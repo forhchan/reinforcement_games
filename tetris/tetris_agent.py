@@ -40,12 +40,12 @@ class Trainer():
         
     def train_step(self, state, reward, new_state, done):
         reward = torch.tensor(reward, dtype=torch.float)
-        
         if state.dim() == 1: # change dimension
             state = torch.unsqueeze(state, dim=0)
             new_state = torch.unsqueeze(new_state, dim=0)
             reward = torch.unsqueeze(reward, dim=0)
             done = (done, )
+            
         
         pred = self.model(state)[0] #　if output is two dimension. get [0]
         target = pred.clone()
@@ -56,7 +56,8 @@ class Trainer():
             target[idx] = new_Q
         
         loss = self.loss_fn(target, pred)
-        self.loss = loss.item()
+        if len(state) > 1:
+            self.loss = loss.item() / len(state)
         
         self.opt.zero_grad()
         loss.backward()
@@ -110,7 +111,8 @@ class Agent:
         state = self.env.reset().to(self.device) # the first state
         cleared_lines = []
         mean_cleared_lines = []
-        # losses = []
+        losses = []
+        best_cleared_lines = 0
         
         
         while self.n_games < num_epochs:
@@ -126,20 +128,26 @@ class Agent:
             action = next_actions[action]
             
             reward, done = self.env.step(action, n_games=self.n_games)
-            self.train_short_memory(state, reward, next_state, done)
+            
+            if best_cleared_lines < 10:
+                self.train_short_memory(state, reward, next_state, done)
             
             self.remember(state, reward, next_state, done)
             
             if done:
                 self.n_games += 1
                 
+                if best_cleared_lines < self.env.cleared_lines:
+                    best_cleared_lines = self.env.cleared_lines
+                    print(f"memory len : {len(self.memory)}")
                 ###################### Plot visualizing #############################
                 if self.plot_display:
                     cleared_lines.append(self.env.cleared_lines)
                     last_100_cleared_lines = sum(cleared_lines[-100:]) / 100
                     mean_cleared_lines.append(last_100_cleared_lines)
-                    # losses.append(self.trainer.loss / 100)
-                    plot(cleared_lines, mean_cleared_lines)
+                    losses.append(self.trainer.loss)
+                # if self.n_games == 1495:
+                    plot(cleared_lines, mean_cleared_lines, losses)
                 ######################################################################
                 
                 # if self.n_games % 50 == 0 or self.env.cleared_lines != 0:

@@ -132,13 +132,13 @@ class Agent:
         # danger_left, danger_straight, danger_right, move_left, move_up, move_right, move_down, food_up, food_down, food_left, food_right
         
         while True:
-            # game.render(self.n_games, self.r)
+            # game.render(self.n_games, record)
             # Decide action
             obs = game.get_state(game.prev_direction)
             action = self.get_action(obs)
             self.model.train()
             
-            # perform move and get new state
+            # perform move and get new state``
             reward, done = game.step(int(action))
             
             # if reward == 0:
@@ -162,14 +162,16 @@ class Agent:
                 # train long memery
                 if game.score > record:
                     record = game.score
+                    print(f"best score : {record} in game :{self.n_games}")
+                    print(f"memory : {len(self.memory)}")
                 
                 # if self.n_games % 100 == 0:
                 #     print(f"n_games : {self.n_games}, score : {game.score} record : {self.r}")
-                plot_scores.append(game.score)
-                total_scores += game.score
-                mean_score = total_scores / (self.n_games + 1)
-                plot_mean_scores.append(mean_score)
-                plot(plot_scores, plot_mean_scores)
+                # plot_scores.append(game.score)
+                # total_scores += game.score
+                # mean_score = total_scores / (self.n_games + 1)
+                # plot_mean_scores.append(mean_score)
+                # plot(plot_scores, plot_mean_scores)
                     
                 game.reset()
                 self.n_games += 1

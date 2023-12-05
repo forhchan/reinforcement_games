@@ -159,8 +159,7 @@ class Tetris:
         if len(to_del) > 0:
             board = self.clear_line(board, to_del)
         return len(to_del), board
-    
-    
+     
     def get_state(self, board) -> torch.FloatTensor:
         lines_cleared, board = self.check_cleared_rows(board)
         # holes = self.count_holes(board)
@@ -264,7 +263,6 @@ class Tetris:
                 self.out.release()
                 cv2.destroyAllWindows()
                         
-
     def update_curr_board(self, board):
         if self.pos["y"] == 0:
             x_pos = self.width // 2 - (len(self.blocks[self.block_idx][:]) // 2)
