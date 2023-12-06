@@ -20,14 +20,25 @@ def plot(scores, mean_scores):
     plt.clf()
     plt.title('Training...')
     plt.xlabel('Number of Games')
-    plt.ylabel('Score')
-    plt.plot(scores, label="Socre")
-    plt.plot(mean_scores, label="Mean Score")
+    plt.ylabel('Cleared Lines')
+    plt.plot(scores, label="Cleared Lines")
+    plt.plot(mean_scores, label="Last 100 games Mean Cleared Lines")
+    
     plt.ylim(ymin=0)
     plt.text(len(scores)-1, scores[-1], str(scores[-1]))
     plt.text(len(mean_scores)-1, mean_scores[-1], str(f'{mean_scores[-1]:.3f}'))
+    
+    
+    if max(scores) > 0:
+        plt.scatter(len(scores) -scores[::-1].index(max(scores)) -1, max(scores), c="red", s=10)
+        plt.text(len(scores) - scores[::-1].index(max(scores)) -1, max(scores), str(f'best: {max(scores)}'))
+    # plt.text(len(losses)-1, losses[-1], str(f'{losses[-1]:.3f}'))
+    
     plt.show(block=False)
-    plt.legend()
+    plt.legend(loc='upper left')
+    # plt.savefig("model_64x128x128.png")
+    plt.pause(.1)
+
     
     
 def get_args():
@@ -89,7 +100,6 @@ class Agent:
         self.model = Model(input_size=11)
         self.trainer = Trainer(self.model, gamma=args.gamma)
         
-        
     def remember(self, obs, new_obs, reward, action, done):
         self.memory.append((obs, new_obs, reward, action, done))
     
@@ -126,31 +136,28 @@ class Agent:
         plot_scores = []
         plot_mean_scores = []
         total_scores = 0
+        # break infinite loop 
+        game_limit = 0
         # game_stuck = 0
         
         # initial obs, reward, done
         # danger_left, danger_straight, danger_right, move_left, move_up, move_right, move_down, food_up, food_down, food_left, food_right
         
         while True:
+            game_limit += 1
             # game.render(self.n_games, record)
             # Decide action
             obs = game.get_state(game.prev_direction)
             action = self.get_action(obs)
             self.model.train()
-            
             # perform move and get new state``
             reward, done = game.step(int(action))
-            
-            # if reward == 0:
-            #     game_stuck += 1
-            
-            # if game_stuck > 200:
-            #     done = True
             
             new_obs = game.get_state(game.prev_direction)
             # train short memory
             
-            self.train_short_memory(obs, new_obs, reward, action, done)
+            if record < 20 or game.score > 20:
+                self.train_short_memory(obs, new_obs, reward, action, done)
             
             # remember
             self.remember(obs, new_obs, reward, action, done)
@@ -158,28 +165,27 @@ class Agent:
             # if game_unchanged_count % 100 == 0:
             #     print(f"count : {game_unchanged_count}")
             
-            if done:
+            if done or game_limit > 2000:
                 # train long memery
                 if game.score > record:
                     record = game.score
-                    print(f"best score : {record} in game :{self.n_games}")
-                    print(f"memory : {len(self.memory)}")
+                    # print(f"best score : {record} in game :{self.n_games}")
+                    # print(f"memory : {len(self.memory)}")
                 
                 # if self.n_games % 100 == 0:
-                #     print(f"n_games : {self.n_games}, score : {game.score} record : {self.r}")
-                # plot_scores.append(game.score)
-                # total_scores += game.score
-                # mean_score = total_scores / (self.n_games + 1)
-                # plot_mean_scores.append(mean_score)
-                # plot(plot_scores, plot_mean_scores)
+                #     print(f"n_games : {self.n_games}, score : {game.score} record : {record}")
+                
+                plot_scores.append(game.score)
+                total_scores += game.score
+                mean_score = total_scores / (self.n_games + 1)
+                plot_mean_scores.append(mean_score)
+                plot(plot_scores, plot_mean_scores)
                     
                 game.reset()
                 self.n_games += 1
                 self.train_long_memory()
+                game_limit = 0
                 
-                
-
-
 
 if __name__ == '__main__':
     args = get_args()

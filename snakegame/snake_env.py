@@ -68,7 +68,7 @@ class SnakeEnv:
         return 0
     
     def find_danger(self, head, move_direction):
-        # clock_wise = 0: left, 1:up, 2:right, 3:down
+        # clock_wise starts from left = 0: left, 1:up, 2:right, 3:down
         x, y = head[0], head[1]
         head_danger = list((x, y))
         danger = [0, 0, 0]  # danger [left, straight, right]
@@ -76,46 +76,21 @@ class SnakeEnv:
             # Turning left
             if i == 0:
                 idx = (move_direction -1) % 4
-                if idx == 0:
-                    head_danger[0] -= 10
-                elif idx == 1:
-                    head_danger[1] -= 10
-                elif idx == 2:
-                    head_danger[0] += 10
-                elif idx == 3:
-                    head_danger[1] += 10
-                
-                danger[0] = self.is_collision(head_danger)
-                
-        
             elif i == 1:
-                # Moving forward
                 idx = move_direction
-                if idx == 0:
-                    head_danger[0] -= 10
-                elif idx == 1:
-                    head_danger[1] -= 10
-                elif idx == 2:
-                    head_danger[0] += 10
-                elif idx == 3:
-                    head_danger[1] += 10
-                
-                danger[1] = self.is_collision(head_danger)
-            
             elif i == 2:
-                # Turning right
                 idx = (move_direction +1) % 4
-                if idx == 0:
-                    head_danger[0] -= 10
-                elif idx == 1:
-                    head_danger[1] -= 10
-                elif idx == 2:
-                    head_danger[0] += 10
-                elif idx == 3:
-                    head_danger[1] += 10
                 
-                danger[2] = self.is_collision(head_danger)
-        
+            if idx == 0:
+                head_danger[0] -= 20
+            elif idx == 1:
+                head_danger[1] -= 20
+            elif idx == 2:
+                head_danger[0] += 20
+            elif idx == 3:
+                head_danger[1] += 20
+            danger[i] = self.is_collision(head_danger)
+            
         return danger
 
     def get_state(self, move_direction):
