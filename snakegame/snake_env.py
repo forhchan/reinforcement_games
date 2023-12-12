@@ -39,7 +39,7 @@ class SnakeEnv:
             cv2.rectangle(self.img,(position[0],position[1]),(position[0]+20,position[1]+20),(0,255,0),3)
         
         # Takes step after fixed time
-        t_end = time.time() + 0.001
+        t_end = time.time() + 0.0004
         k = -1
         while time.time() < t_end:
             if k == -1:
@@ -66,6 +66,19 @@ class SnakeEnv:
             return 1
         
         return 0
+    
+    def check_repeat_action(self):
+        if self.snake_head in self.snake_head_positions:
+            if self.repeat_positions != self.snake_head_positions:
+                self.repeat_positions = self.snake_head_positions[self.snake_head_positions.index(self.snake_head):]
+            else:
+                self.repeat_count += 1
+            self.snake_head_positions = []
+            
+        if self.repeat_count >= 2:
+            return 1
+        
+        return 0    
     
     def find_danger(self, head, move_direction):
         # clock_wise starts from left = 0: left, 1:up, 2:right, 3:down
@@ -94,6 +107,8 @@ class SnakeEnv:
         return danger
 
     def get_state(self, move_direction):
+        repeat = self.check_repeat_action()
+        
         move = [0, 0, 0, 0]
         move[move_direction] = 1
         move_left, move_up, move_right, move_down = move
@@ -109,12 +124,12 @@ class SnakeEnv:
         if self.snake_head[1] < self.apple_position[1]:
             food[3] = 1
                 
-        food_left, food_up, food_right, food_down = food
+        food_left, food_down, food_right, food_up = food
         
         
         observation = [danger_left, danger_straight, danger_right, move_left, move_up, move_right, move_down, food_up, food_down, food_left, food_right]
         
-        return np.array(observation, dtype=int)
+        return np.array(observation, dtype=int), repeat
         
     def step(self, action):
         # Change the head position based on the button direction
@@ -133,6 +148,8 @@ class SnakeEnv:
             idx = (self.prev_direction +1) % 4
             move_direction = self.clock_wise_directions[idx]
             
+        self.snake_head_positions.append([self.snake_head[0], self.snake_head[1]])
+            
         
         # clock_wise = 0: left, 1:up, 2:right, 3:down
         if move_direction == 0:
@@ -144,7 +161,8 @@ class SnakeEnv:
         elif move_direction == 3:
             self.snake_head[1] += 20
         
-
+        
+            
         reward = 0
         # Increase Snake length on eating apple
         if self.snake_head == self.apple_position:
@@ -177,6 +195,9 @@ class SnakeEnv:
         self.clock_wise_directions = [0, 1, 2, 3]  # left, up, right, down
         self.prev_direction = self.clock_wise_directions[2]
         self.snake_head = [260,260]
+        self.snake_head_positions = []
+        self.repeat_positions = []
+        self.repeat_count = 0
         
         # initial_observation = np.zeros(6)  # 적절한 초기값으로 변경해야 합니다.
         

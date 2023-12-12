@@ -137,26 +137,32 @@ class Agent:
         plot_mean_scores = []
         total_scores = 0
         # break infinite loop 
-        game_limit = 0
         # game_stuck = 0
         
         # initial obs, reward, done
         # danger_left, danger_straight, danger_right, move_left, move_up, move_right, move_down, food_up, food_down, food_left, food_right
         
         while True:
-            game_limit += 1
             # game.render(self.n_games, record)
             # Decide action
-            obs = game.get_state(game.prev_direction)
-            action = self.get_action(obs)
+            obs, repeat = game.get_state(game.prev_direction)
+            
+            # Check if movements repeat more than 3 times
+            if repeat:
+                actions = [0, 1, 2]
+                actions.remove(action)
+                action = random.choice(actions)
+            else:
+                action = self.get_action(obs)
+                
             self.model.train()
             # perform move and get new state``
             reward, done = game.step(int(action))
             
-            new_obs = game.get_state(game.prev_direction)
+            new_obs,_ = game.get_state(game.prev_direction)
             # train short memory
             
-            if record < 20 or game.score > 20:
+            if record < 25:
                 self.train_short_memory(obs, new_obs, reward, action, done)
             
             # remember
@@ -165,7 +171,7 @@ class Agent:
             # if game_unchanged_count % 100 == 0:
             #     print(f"count : {game_unchanged_count}")
             
-            if done or game_limit > 2000:
+            if done:
                 # train long memery
                 if game.score > record:
                     record = game.score
@@ -184,7 +190,6 @@ class Agent:
                 game.reset()
                 self.n_games += 1
                 self.train_long_memory()
-                game_limit = 0
                 
 
 if __name__ == '__main__':
