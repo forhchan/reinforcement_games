@@ -132,64 +132,94 @@ class Agent:
     
     def train(self):
         game = SnakeEnv()
+        game1 = SnakeEnv()
+        
+        games = [game, game1]
+        games_num = len(games)
+        best_game_num = 0
+        
+        rem_1 = []
+        rem_2 = []
+        
         record = 0
         plot_scores = []
         plot_mean_scores = []
         total_scores = 0
         # break infinite loop 
-        # game_stuck = 0
+        game_stuck = 0
         
         # initial obs, reward, done
         # danger_left, danger_straight, danger_right, move_left, move_up, move_right, move_down, food_up, food_down, food_left, food_right
         
         while True:
-            # game.render(self.n_games, record)
-            # Decide action
-            obs, repeat = game.get_state(game.prev_direction)
             
-            # Check if movements repeat more than 3 times
-            if repeat:
-                actions = [0, 1, 2]
-                actions.remove(action)
-                action = random.choice(actions)
-            else:
-                action = self.get_action(obs)
+            for n, g in enumerate(games):
+                # game.render(self.n_games, record)
+                # Decide action
+                obs, repeat = g.get_state(g.prev_direction)
                 
-            self.model.train()
-            # perform move and get new state``
-            reward, done = game.step(int(action))
-            
-            new_obs,_ = game.get_state(game.prev_direction)
-            # train short memory
-            
-            if record < 25:
-                self.train_short_memory(obs, new_obs, reward, action, done)
-            
-            # remember
-            self.remember(obs, new_obs, reward, action, done)
-            
-            # if game_unchanged_count % 100 == 0:
-            #     print(f"count : {game_unchanged_count}")
-            
-            if done:
-                # train long memery
-                if game.score > record:
-                    record = game.score
-                    # print(f"best score : {record} in game :{self.n_games}")
-                    # print(f"memory : {len(self.memory)}")
-                
-                # if self.n_games % 100 == 0:
-                #     print(f"n_games : {self.n_games}, score : {game.score} record : {record}")
-                
-                plot_scores.append(game.score)
-                total_scores += game.score
-                mean_score = total_scores / (self.n_games + 1)
-                plot_mean_scores.append(mean_score)
-                plot(plot_scores, plot_mean_scores)
+                # Check if movements repeat more than 3 times
+                if repeat:
+                    actions = [0, 1, 2]
+                    actions.remove(action)
+                    action = random.choice(actions)
+                else:
+                    action = self.get_action(obs)
                     
-                game.reset()
-                self.n_games += 1
-                self.train_long_memory()
+                self.model.train()
+                # perform move and get new state``
+                reward, done = g.step(int(action))
+                
+                new_obs,_ = g.get_state(g.prev_direction)
+                # train short memory
+                
+                # if record < 25:
+                #     self.train_short_memory(obs, new_obs, reward, action, done)
+                
+                # remember
+                # self.remember(obs, new_obs, reward, action, done)
+                
+                # if game_unchanged_count % 100 == 0:
+                #     print(f"count : {game_unchanged_count}")
+                
+                if n == 1:
+                    rem_1.append((obs, new_obs, reward, action, done))
+                elif n == 2:
+                    rem_2.append((obs, new_obs, reward, action, done))
+                
+                if game_stuck > 1000:
+                    done = True
+                else:
+                    game_stuck += 1
+                
+                
+                if done:
+                    g.score > record:
+                        record = g.score
+                        best_game_num = n
+                    games_num -= 1
+                
+                
+                # if done:
+                #     # train long memery
+                #     if game.score > record:
+                #         record = game.score
+                #         # print(f"best score : {record} in game :{self.n_games}")
+                #         # print(f"memory : {len(self.memory)}")
+                    
+                #     # if self.n_games % 100 == 0:
+                #     #     print(f"n_games : {self.n_games}, score : {game.score} record : {record}")
+                    
+                #     plot_scores.append(game.score)
+                #     total_scores += game.score
+                #     mean_score = total_scores / (self.n_games + 1)
+                #     plot_mean_scores.append(mean_score)
+                #     plot(plot_scores, plot_mean_scores)
+                        
+                #     game.reset()
+                #     self.n_games += 1
+                #     self.train_long_memory()
+                #     game_stuck = 0
                 
 
 if __name__ == '__main__':

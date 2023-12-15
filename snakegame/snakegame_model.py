@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class Model(nn.Module):
-    def __init__(self, input_size, hidden_size=512, output_size=3):
+    def __init__(self, input_size, hidden_size=256, output_size=3):
         super().__init__()
         self.fn = nn.Sequential(
             nn.Linear(in_features=input_size, out_features=hidden_size),

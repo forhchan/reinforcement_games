@@ -5,8 +5,6 @@ import time
 
 
 class SnakeEnv:
-    
-    
     def __init__(self) -> None:
         super(SnakeEnv, self).__init__()
         
@@ -73,6 +71,7 @@ class SnakeEnv:
                 self.repeat_positions = self.snake_head_positions[self.snake_head_positions.index(self.snake_head):]
             else:
                 self.repeat_count += 1
+                print(f"repeated : {self.repeat_count}")
             self.snake_head_positions = []
             
         if self.repeat_count >= 2:
@@ -93,7 +92,6 @@ class SnakeEnv:
                 idx = move_direction
             elif i == 2:
                 idx = (move_direction +1) % 4
-                
             if idx == 0:
                 head_danger[0] -= 20
             elif idx == 1:
